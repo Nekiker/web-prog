@@ -10,7 +10,7 @@ class PublishedManager(models.Manager):
         return super().get_queryset().filter(is_published=PublishStatus.PUBLISHED)
 
 class Category(models.Model):
-    name = models.CharField(max_length=100, db_index=True)
+    name = models.CharField(max_length=100, db_index=True, verbose_name="Категория")
     slug = models.SlugField(max_length=255, unique=True, db_index=True)
 
     def __str__(self):
@@ -34,16 +34,20 @@ class ShipPassport(models.Model):
 
 
 class Starship(models.Model):
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, verbose_name="Заголовок")
     slug = models.SlugField(max_length=255, db_index=True, unique=True)
-    content = models.TextField(blank=True)
-    time_create = models.DateTimeField(auto_now_add=True)
-    time_update = models.DateTimeField(auto_now=True)
-    is_published = models.IntegerField(choices=PublishStatus.choices, default=PublishStatus.PUBLISHED)
+    content = models.TextField(blank=True, verbose_name="Текст")
+    time_create = models.DateTimeField(auto_now_add=True, verbose_name="Время создания")
+    time_update = models.DateTimeField(auto_now=True, verbose_name="Время изменения")
+    is_published = models.IntegerField(choices=PublishStatus.choices,
+                                       default=PublishStatus.PUBLISHED,
+                                       verbose_name="Статус")
     objects = models.Manager()
     published = PublishedManager()
-    cat = models.ForeignKey('Category', on_delete=models.PROTECT, related_name='posts')
-    tags = models.ManyToManyField('TagPost', blank=True, related_name='tags')
+    cat = models.ForeignKey('Category', on_delete=models.PROTECT,
+                            related_name='posts', verbose_name="Категория")
+    tags = models.ManyToManyField('TagPost', blank=True,
+                                  related_name='tags', verbose_name="Теги")
     passport = models.OneToOneField('ShipPassport', on_delete=models.SET_NULL,
                                     null=True, blank=True, related_name='starship')
 
@@ -52,6 +56,6 @@ class Starship(models.Model):
 
     class Meta:
         ordering = ['-time_create']
-        indexes = [
-            models.Index(fields=['-time_create']),
-        ]
+        indexes = [models.Index(fields=['-time_create'])]
+        verbose_name = 'Корабль'
+        verbose_name_plural = 'Корабли'
