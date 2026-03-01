@@ -1,0 +1,39 @@
+{% load static %}
+{% load mandalore_tags %}
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{% static 'mandalore/css/styles.css' %}">
+    <title>{{title}}</title>
+</head>
+<body>
+
+<ul>
+    <li><a href="{% url 'home' %}">Главная</a></li>
+
+    {% for m in menu %}
+        {% if not forloop.last %}<li>{% else %}<li class="last">{% endif %}
+            {% if m.url_name %}
+                <a href="{% url m.url_name %}">{{ m.title }}</a>
+            {% else %}
+                {{ m }}
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+
+<img src="{% static 'mandalore/images/logo.png' %}" alt="logo" width="120">
+<ul id="leftchapters">
+    {% if cat_selected == 0 or cat_selected is None %}
+        <li class="selected">Все категории</li>
+    {% else %}
+        <li><a href="{% url 'home' %}">Все категории</a></li>
+    {% endif %}
+
+    {% show_categories cat_selected_id=cat_selected %}
+</ul>
+{% block content %}
+{% endblock %}
+
+</body>
+</html>
