@@ -10,6 +10,10 @@
     {% if p.is_published %}
     <li>
         <h2>{{p.title}}</h2>
+        <li><div class="article-panel">
+            <p class="first">Категория: {{ p.cat }}</p>
+            <p class="last">Дата: {{ p.time_update|date:"d-m-Y H:i:s" }}</p>
+        </div>
         <p>{{p.content}}</p>
         <p><a href="{{ p.get_absolute_url }}">Читать пост</a></p>
         {% if not forloop.last %}
