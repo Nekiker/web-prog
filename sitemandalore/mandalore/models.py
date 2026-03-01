@@ -51,6 +51,14 @@ class Starship(models.Model):
     passport = models.OneToOneField('ShipPassport', on_delete=models.SET_NULL,
                                     null=True, blank=True, related_name='starship')
 
+    photo = models.ImageField(
+        upload_to="photos/%Y/%m/%d/",
+        default=None,
+        blank=True,
+        null=True,
+        verbose_name="Фото"
+    )
+
     def get_absolute_url(self):
         return reverse('post', kwargs={'post_slug': self.slug})
 
@@ -59,3 +67,9 @@ class Starship(models.Model):
         indexes = [models.Index(fields=['-time_create'])]
         verbose_name = 'Корабль'
         verbose_name_plural = 'Корабли'
+
+class UploadFiles(models.Model):
+    file = models.FileField(upload_to='uploads_model')
+
+    def __str__(self):
+        return str(self.file)

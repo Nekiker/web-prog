@@ -14,6 +14,9 @@
             <p class="first">Категория: {{ p.cat }}</p>
             <p class="last">Дата: {{ p.time_update|date:"d-m-Y H:i:s" }}</p>
         </div>
+        {% if p.photo %}
+    <p><img src="{{ p.photo.url }}" alt="{{ p.title }}" style="max-width: 300px;"></p>
+{% endif %}
         <p>{{p.content}}</p>
         <p><a href="{{ p.get_absolute_url }}">Читать пост</a></p>
         {% if not forloop.last %}

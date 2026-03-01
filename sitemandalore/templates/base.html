@@ -9,15 +9,9 @@
 <body>
 
 <ul>
-    <li><a href="{% url 'home' %}">Главная</a></li>
-
     {% for m in menu %}
-        {% if not forloop.last %}<li>{% else %}<li class="last">{% endif %}
-            {% if m.url_name %}
-                <a href="{% url m.url_name %}">{{ m.title }}</a>
-            {% else %}
-                {{ m }}
-            {% endif %}
+        <li>
+            <a href="{% url m.url_name %}">{{ m.title }}</a>
         </li>
     {% endfor %}
 </ul>

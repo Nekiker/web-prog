@@ -4,9 +4,20 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404, render
 from .models import Starship
+from .forms import AddPostForm
+from .forms import UploadFileForm
+from .models import Starship, PublishStatus
+from django.db import IntegrityError
+import uuid
+from .models import UploadFiles
 
-
-menu = ["О сайте", "Добавить статью", "Обратная связь", "Войти"]
+menu = [
+    {'title': "Главная", 'url_name': 'home'},
+    {'title': "О сайте", 'url_name': 'about'},
+    {'title': "Добавить статью", 'url_name': 'addpage'},
+    {'title': "Обратная связь", 'url_name': 'contact'},
+    {'title': "Войти", 'url_name': 'login'},
+]
 
 cats_db = [
     {'id': 1, 'name': 'Лёгкие корабли'},
@@ -52,8 +63,30 @@ def index(request):
     }
     return render(request, 'mandalore/index.html', context=data)
 
+def handle_uploaded_file(f):
+    name = f.name
+    ext = ''
+    if '.' in name:
+        ext = name[name.rindex('.'):]
+
+        name = name[:name.rindex('.')]
+
+    suffix = str(uuid.uuid4())
+
+    with open(f"uploads/{name}_{suffix}{ext}", "wb+") as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
 def about(request):
-    return render(request, 'mandalore/about.html', {'title': 'О сайте', 'menu': menu, 'cat_selected': 0})
+    if request.method == "POST":
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            fp = UploadFiles(file=form.cleaned_data['file'])
+            fp.save()
+    else:
+        form = UploadFileForm()
+
+    return render(request, 'mandalore/about.html',
+                  {'title': 'О сайте', 'menu': menu, 'form': form})
 
 def categories(request, starship_id):
     return HttpResponse(f"<h1>Статьи по категориям</h1><p >id:{starship_id}</p>")
@@ -74,4 +107,23 @@ def archive(request, year):
 def page_not_found(request, exception):
     return HttpResponseNotFound('<h1>Страница не найдена</h1>')
 
-# Create your views here.
+from django.shortcuts import render, redirect
+from .forms import AddPostForm
+
+def addpage(request):
+    if request.method == 'POST':
+        form = AddPostForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = AddPostForm()
+
+    return render(request, 'mandalore/addpage.html',
+                  {'menu': menu, 'title': 'Добавление статьи', 'form': form})
+
+def contact(request):
+    return render(request, 'mandalore/contact.html', {'menu': menu, 'title': 'Обратная связь'})
+
+def login(request):
+    return render(request, 'mandalore/login.html', {'menu': menu, 'title': 'Войти'})

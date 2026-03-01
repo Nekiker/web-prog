@@ -4,7 +4,7 @@
 <h1>{{ post.title }}</h1>
 
 {% if post.photo %}
-<p><img class="img-article-left" src="{{ post.photo.url }}"></p>
+    <p><img src="{{ post.photo.url }}" alt="{{ post.title }}" style="max-width: 500px;"></p>
 {% endif %}
 
 <p>{{ post.content }}</p>

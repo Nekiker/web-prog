@@ -1,10 +1,11 @@
 from django.contrib import admin, messages
 from .models import Starship, Category, PublishStatus
+from django.utils.safestring import mark_safe
 
 
 @admin.register(Starship)
 class StarshipAdmin(admin.ModelAdmin):
-    list_display = ('title', 'time_create', 'is_published', 'cat', 'brief_info', 'tags_count')
+    list_display = ('photo_preview', 'title', 'time_create', 'is_published', 'cat', 'brief_info', 'tags_count')
     list_display_links = ('title',)
     list_editable = ('is_published',)
     ordering = ['-time_create', 'title']
@@ -14,20 +15,18 @@ class StarshipAdmin(admin.ModelAdmin):
     list_filter = ['is_published', 'cat', 'time_create']
     prepopulated_fields = {"slug": ("title",)}
     fieldsets = (
-        ("Основные данные", {
-            "fields": ("title", "slug", "cat", "tags")
-        }),
-        ("Текст", {
-            "fields": ("content",)
-        }),
-        ("Публикация", {
-            "fields": ("is_published",)
-        }),
-        ("Служебная информация", {
-            "fields": ("time_create", "time_update")
-        }),
+        ("Основные данные", {"fields": ("title", "slug", "cat", "tags", "photo", "photo_preview")}),
+        ("Текст", {"fields": ("content",)}),
+        ("Публикация", {"fields": ("is_published",)}),
+        ("Служебная информация", {"fields": ("time_create", "time_update")}),
     )
-    readonly_fields = ['time_create', 'time_update']
+    readonly_fields = ['time_create', 'time_update', 'photo_preview']
+
+    @admin.display(description="Фото")
+    def photo_preview(self, starship):
+        if starship.photo:
+            return mark_safe(f"<img src='{starship.photo.url}' width='60' />")
+        return "—"
 
     @admin.action(description="Опубликовать выбранные записи")
     def set_published(self, request, queryset):
