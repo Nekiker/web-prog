@@ -2,6 +2,8 @@ from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.template.loader import render_to_string
+from django.shortcuts import get_object_or_404, render
+from .models import Starship
 
 
 menu = ["О сайте", "Добавить статью", "Обратная связь", "Войти"]
@@ -29,14 +31,23 @@ def show_category(request, cat_id):
     }
     return render(request, 'mandalore/index.html', context=data)
 
-def show_post(request, post_id):
-    return HttpResponse(f"Статья: {post_id}")
+def show_post(request, post_slug):
+    post = get_object_or_404(Starship, slug=post_slug)
+
+    data = {
+        'title': post.title,
+        'menu': menu,
+        'post': post,
+        'cat_selected': 1,
+    }
+    return render(request, 'mandalore/post.html', context=data)
 
 def index(request):
+    posts = Starship.objects.filter(is_published=True)
     data = {
         'title': 'Главная страница',
         'menu': menu,
-        'posts': data_db,
+        'posts': posts,
         'cat_selected': 0,
     }
     return render(request, 'mandalore/index.html', context=data)
