@@ -3,29 +3,57 @@
 {% block content %}
 {% include 'mandalore/includes/nav.html' %}
 
-<h1>{{title}}</h1>
+<h1>{{ title }}</h1>
 
 <ul>
-    {% for p in posts %}
-    {% if p.is_published %}
-    <li>
-        <h2>{{p.title}}</h2>
-        <li><div class="article-panel">
-            <p class="first">Категория: {{ p.cat }}</p>
-            <p class="last">Дата: {{ p.time_update|date:"d-m-Y H:i:s" }}</p>
-        </div>
-        {% if p.photo %}
-    <p><img src="{{ p.photo.url }}" alt="{{ p.title }}" style="max-width: 300px;"></p>
-{% endif %}
-        <p>{{p.content}}</p>
-        <p><a href="{{ p.get_absolute_url }}">Читать пост</a></p>
-        {% if not forloop.last %}
-        <hr>
-        {% endif %}
-    </li>
-    {% endif %}
+    {% for p in page_obj %}
+        <li>
+            <h2>{{ p.title }}</h2>
+
+            <div class="article-panel">
+                <p class="first">Категория: {{ p.cat }}</p>
+                <p class="last">Дата: {{ p.time_update|date:"d-m-Y H:i:s" }}</p>
+            </div>
+
+            {% if p.photo %}
+                <p><img src="{{ p.photo.url }}" alt="{{ p.title }}" style="max-width: 300px;"></p>
+            {% endif %}
+
+            <p>{{ p.content }}</p>
+            <p><a href="{{ p.get_absolute_url }}">Читать пост</a></p>
+
+            {% if not forloop.last %}
+                <hr>
+            {% endif %}
+        </li>
     {% endfor %}
 </ul>
+
+{% if is_paginated %}
+<nav class="list-pages">
+    <ul>
+        {% if page_obj.has_previous %}
+            <li class="page-num">
+                <a href="?page={{ page_obj.previous_page_number }}">&lt;</a>
+            </li>
+        {% endif %}
+
+        {% for p in paginator.page_range %}
+            {% if page_obj.number == p %}
+                <li class="page-num page-num-selected">{{ p }}</li>
+            {% else %}
+                <li class="page-num"><a href="?page={{ p }}">{{ p }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li class="page-num">
+                <a href="?page={{ page_obj.next_page_number }}">&gt;</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
 
 {% include 'mandalore/includes/nav.html' %}
 {% endblock %}

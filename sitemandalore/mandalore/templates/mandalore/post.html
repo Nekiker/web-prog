@@ -7,5 +7,10 @@
     <p><img src="{{ post.photo.url }}" alt="{{ post.title }}" style="max-width: 500px;"></p>
 {% endif %}
 
+<p>
+    <a href="{% url 'edit_post' post.slug %}">Редактировать</a> |
+    <a href="{% url 'delete_post' post.slug %}">Удалить</a>
+</p>
+
 <p>{{ post.content }}</p>
 {% endblock %}

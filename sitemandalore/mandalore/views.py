@@ -10,6 +10,16 @@ from .models import Starship, PublishStatus
 from django.db import IntegrityError
 import uuid
 from .models import UploadFiles
+from django.views import View
+from django.views.generic import TemplateView
+from django.views.generic import ListView
+from .models import Starship, Category
+from django.views.generic import DetailView
+from django.urls import reverse_lazy
+from django.views.generic.edit import FormView, CreateView
+from django.views.generic.edit import UpdateView
+from django.views.generic.edit import DeleteView
+from django.core.paginator import Paginator
 
 menu = [
     {'title': "Главная", 'url_name': 'home'},
@@ -110,20 +120,172 @@ def page_not_found(request, exception):
 from django.shortcuts import render, redirect
 from .forms import AddPostForm
 
-def addpage(request):
-    if request.method == 'POST':
-        form = AddPostForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
-    else:
-        form = AddPostForm()
-
-    return render(request, 'mandalore/addpage.html',
-                  {'menu': menu, 'title': 'Добавление статьи', 'form': form})
+class AddPage(CreateView):
+    model = Starship
+    form_class = AddPostForm
+    template_name = 'mandalore/addpage.html'
+    success_url = reverse_lazy('home')
+    extra_context = {
+        'menu': menu,
+        'title': 'Добавление статьи',
+    }
 
 def contact(request):
     return render(request, 'mandalore/contact.html', {'menu': menu, 'title': 'Обратная связь'})
 
 def login(request):
     return render(request, 'mandalore/login.html', {'menu': menu, 'title': 'Войти'})
+
+class AboutPage(TemplateView):
+    template_name = 'mandalore/about.html'
+    extra_context = {'menu': menu, 'title': 'О сайте'}
+
+class StarshipHome(ListView):
+    template_name = 'mandalore/index.html'
+    context_object_name = 'posts'
+
+    def get_queryset(self):
+        return Starship.published.all().select_related('cat')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = 'Главная страница'
+        context['cat_selected'] = 0
+        return context
+
+
+
+
+class UpdatePage(UpdateView):
+    model = Starship
+    form_class = AddPostForm
+    template_name = 'mandalore/addpage.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = f'Редактирование: {self.object.title}'
+        return context
+
+class DeletePost(DeleteView):
+    model = Starship
+    template_name = 'mandalore/post_delete.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
+    success_url = reverse_lazy('home')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = f'Удаление: {self.object.title}'
+        return context
+
+class DataMixin:
+    def get_user_context(self, **kwargs):
+        context = kwargs
+        context['menu'] = menu
+        if 'cat_selected' not in context:
+            context['cat_selected'] = 0
+        return context
+
+class StarshipHome(DataMixin, ListView):
+    template_name = 'mandalore/index.html'
+    context_object_name = 'posts'
+    paginate_by = 2
+
+    def get_queryset(self):
+        return Starship.objects.filter(is_published=1).select_related('cat')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Главная страница', cat_selected=0)
+        return {**context, **c_def}
+
+class ShowCategory(DataMixin, ListView):
+    template_name = 'mandalore/index.html'
+    context_object_name = 'posts'
+    allow_empty = False
+    paginate_by = 2
+
+    def get_queryset(self):
+        return Starship.objects.filter(
+            is_published=1,
+            cat_id=self.kwargs['cat_id']
+        ).select_related('cat')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cat = Category.objects.get(pk=self.kwargs['cat_id'])
+        c_def = self.get_user_context(title=f'Категория: {cat.name}', cat_selected=cat.pk)
+        return {**context, **c_def}
+
+class ShowPost(DataMixin, DetailView):
+    model = Starship
+    template_name = 'mandalore/post.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
+
+    def get_queryset(self):
+        return Starship.objects.all().select_related('cat')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        p = context['post']
+        c_def = self.get_user_context(title=p.title, cat_selected=p.cat_id)
+        return {**context, **c_def}
+
+class AddPage(DataMixin, CreateView):
+    model = Starship
+    form_class = AddPostForm
+    template_name = 'mandalore/addpage.html'
+    success_url = reverse_lazy('home')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Добавление статьи')
+        return {**context, **c_def}
+
+class UpdatePage(DataMixin, UpdateView):
+    model = Starship
+    form_class = AddPostForm
+    template_name = 'mandalore/addpage.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title=f'Редактирование: {self.object.title}')
+        return {**context, **c_def}
+
+class DeletePost(DataMixin, DeleteView):
+    model = Starship
+    template_name = 'mandalore/post_delete.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
+    success_url = reverse_lazy('home')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title=f'Удаление: {self.object.title}')
+        return {**context, **c_def}
+
+class StarshipHomePaginator(DataMixin, View):
+    def get(self, request):
+        posts = Starship.objects.filter(is_published=1).select_related('cat')
+        paginator = Paginator(posts, 2)
+
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = self.get_user_context(title='Главная страница', cat_selected=0)
+        context['page_obj'] = page_obj
+        return render(request, 'mandalore/index.html', context)
