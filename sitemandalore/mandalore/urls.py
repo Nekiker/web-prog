@@ -9,8 +9,7 @@ urlpatterns = [
     path('starships/<slug:starship_slug>/', views.categories_by_slug, name = 'starships'),
   # re_path(r'^archive/(?P<year>[0-9]{4})/', views.archive, name = 'archive'),
     path('archive/<year4:year>/', views.archive, name = 'archive'),
-    path('about/', views.AboutPage.as_view(), name='about'),
-
+    path('about/', views.about, name='about'),
     path('post/<slug:post_slug>/', views.ShowPost.as_view(), name='post'),
     path('category/<int:cat_id>/', views.ShowCategory.as_view(), name='category'),
     path('addpage/', views.AddPage.as_view(), name='addpage'),

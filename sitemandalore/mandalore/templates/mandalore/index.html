@@ -9,6 +9,7 @@
     {% for p in page_obj %}
         <li>
             <h2>{{ p.title }}</h2>
+            <p>Автор: {% if p.author %}{{ p.author.username }}{% else %}—{% endif %}</p>
 
             <div class="article-panel">
                 <p class="first">Категория: {{ p.cat }}</p>
@@ -20,8 +21,9 @@
             {% endif %}
 
             <p>{{ p.content }}</p>
-            <p><a href="{{ p.get_absolute_url }}">Читать пост</a></p>
-
+{% if perms.mandalore.view_starship %}
+    <p><a href="{{ p.get_absolute_url }}">Читать пост</a></p>
+{% endif %}
             {% if not forloop.last %}
                 <hr>
             {% endif %}

@@ -3,13 +3,20 @@
 {% block content %}
 <h1>{{ post.title }}</h1>
 
+    <p>Автор: {% if p.author %}{{ p.author.username }}{% else %}—{% endif %}</p>
+
 {% if post.photo %}
     <p><img src="{{ post.photo.url }}" alt="{{ post.title }}" style="max-width: 500px;"></p>
 {% endif %}
 
 <p>
-    <a href="{% url 'edit_post' post.slug %}">Редактировать</a> |
-    <a href="{% url 'delete_post' post.slug %}">Удалить</a>
+{% if perms.mandalore.change_starship %}
+    <a href="{% url 'edit_post' post.slug %}">Редактировать</a>
+{% endif %}
+
+{% if perms.mandalore.delete_starship %}
+    | <a href="{% url 'delete_post' post.slug %}">Удалить</a>
+{% endif %}
 </p>
 
 <p>{{ post.content }}</p>

@@ -20,6 +20,11 @@ from django.views.generic.edit import FormView, CreateView
 from django.views.generic.edit import UpdateView
 from django.views.generic.edit import DeleteView
 from django.core.paginator import Paginator
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.decorators import permission_required
+
 
 menu = [
     {'title': "Главная", 'url_name': 'home'},
@@ -40,6 +45,14 @@ data_db = [
     {'id': 2, 'title': 'Slave I', 'content': 'Описание Slave I', 'is_published': False,       'cat_id': 1},
     {'id': 3, 'title': 'Millennium Falcon', 'content': 'Описание Falcon', 'is_published': True,'cat_id': 2},
 ]
+
+class DataMixin:
+    def get_user_context(self, **kwargs):
+        context = kwargs
+        context['menu'] = menu
+        if 'cat_selected' not in context:
+            context['cat_selected'] = 0
+        return context
 
 def show_category(request, cat_id):
     posts = [p for p in data_db if p.get('cat_id') == cat_id]
@@ -86,6 +99,8 @@ def handle_uploaded_file(f):
     with open(f"uploads/{name}_{suffix}{ext}", "wb+") as destination:
         for chunk in f.chunks():
             destination.write(chunk)
+
+@login_required
 def about(request):
     if request.method == "POST":
         form = UploadFileForm(request.POST, request.FILES)
@@ -120,16 +135,25 @@ def page_not_found(request, exception):
 from django.shortcuts import render, redirect
 from .forms import AddPostForm
 
-class AddPage(CreateView):
+class AddPage(PermissionRequiredMixin, DataMixin, CreateView):
     model = Starship
     form_class = AddPostForm
     template_name = 'mandalore/addpage.html'
     success_url = reverse_lazy('home')
-    extra_context = {
-        'menu': menu,
-        'title': 'Добавление статьи',
-    }
+    permission_required = 'mandalore.add_starship'
+    login_url = reverse_lazy('users:login')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Добавление статьи')
+        return {**context, **c_def}
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+
+@permission_required(perm='mandalore.view_starship', raise_exception=True)
 def contact(request):
     return render(request, 'mandalore/contact.html', {'menu': menu, 'title': 'Обратная связь'})
 
@@ -156,43 +180,6 @@ class StarshipHome(ListView):
 
 
 
-
-class UpdatePage(UpdateView):
-    model = Starship
-    form_class = AddPostForm
-    template_name = 'mandalore/addpage.html'
-    slug_url_kwarg = 'post_slug'
-    context_object_name = 'post'
-
-    def get_success_url(self):
-        return self.object.get_absolute_url()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = f'Редактирование: {self.object.title}'
-        return context
-
-class DeletePost(DeleteView):
-    model = Starship
-    template_name = 'mandalore/post_delete.html'
-    slug_url_kwarg = 'post_slug'
-    context_object_name = 'post'
-    success_url = reverse_lazy('home')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = f'Удаление: {self.object.title}'
-        return context
-
-class DataMixin:
-    def get_user_context(self, **kwargs):
-        context = kwargs
-        context['menu'] = menu
-        if 'cat_selected' not in context:
-            context['cat_selected'] = 0
-        return context
 
 class StarshipHome(DataMixin, ListView):
     template_name = 'mandalore/index.html'
@@ -240,23 +227,14 @@ class ShowPost(DataMixin, DetailView):
         c_def = self.get_user_context(title=p.title, cat_selected=p.cat_id)
         return {**context, **c_def}
 
-class AddPage(DataMixin, CreateView):
+
+
+class UpdatePage(PermissionRequiredMixin, DataMixin, UpdateView):
     model = Starship
     form_class = AddPostForm
     template_name = 'mandalore/addpage.html'
     success_url = reverse_lazy('home')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title='Добавление статьи')
-        return {**context, **c_def}
-
-class UpdatePage(DataMixin, UpdateView):
-    model = Starship
-    form_class = AddPostForm
-    template_name = 'mandalore/addpage.html'
-    slug_url_kwarg = 'post_slug'
-    context_object_name = 'post'
+    permission_required = 'mandalore.change_starship'
 
     def get_success_url(self):
         return self.object.get_absolute_url()
@@ -266,12 +244,11 @@ class UpdatePage(DataMixin, UpdateView):
         c_def = self.get_user_context(title=f'Редактирование: {self.object.title}')
         return {**context, **c_def}
 
-class DeletePost(DataMixin, DeleteView):
+class DeletePost(PermissionRequiredMixin, DataMixin, DeleteView):
     model = Starship
-    template_name = 'mandalore/post_delete.html'
-    slug_url_kwarg = 'post_slug'
-    context_object_name = 'post'
+    template_name = 'mandalore/post_confirm_delete.html'
     success_url = reverse_lazy('home')
+    permission_required = 'mandalore.delete_starship'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

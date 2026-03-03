@@ -1,5 +1,15 @@
-{% load mandalore_tags %}
-
-<nav>
-  {% show_all_tags %}
+<nav class="main-nav">
+    <a href="{% url 'home' %}">Главная</a> |
+    <a href="{% url 'about' %}">О сайте</a> |
+{% if perms.mandalore.add_starship %}
+    <a href="{% url 'addpage' %}">Добавить статью</a> |
+{% endif %}
+    {% if request.user.is_authenticated %}
+        <a href="{% url 'users:profile' request.user.pk %}">Профиль</a> |
+        <span>{{ request.user.username }}</span> |
+        <a href="{% url 'users:password_change' %}">Сменить пароль</a> |
+        <a href="{% url 'users:logout' %}">Выйти</a>
+    {% else %}
+        <a href="{% url 'users:login' %}">Войти</a>
+    {% endif %}
 </nav>

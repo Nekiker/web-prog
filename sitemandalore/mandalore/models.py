@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 
 class PublishStatus(models.IntegerChoices):
     DRAFT = 0, 'Черновик'
@@ -59,14 +60,24 @@ class Starship(models.Model):
         verbose_name="Фото"
     )
 
+    author = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='posts',
+        verbose_name='Автор'
+    )
+
     def get_absolute_url(self):
         return reverse('post', kwargs={'post_slug': self.slug})
 
     class Meta:
-        ordering = ['-time_create']
-        indexes = [models.Index(fields=['-time_create'])]
-        verbose_name = 'Корабль'
-        verbose_name_plural = 'Корабли'
+        verbose_name = 'Статья'
+        verbose_name_plural = 'Статьи'
+        permissions = [
+            ('can_publish_starship', 'Может публиковать статьи'),
+        ]
 
 class UploadFiles(models.Model):
     file = models.FileField(upload_to='uploads_model')
