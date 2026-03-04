@@ -1,43 +1,50 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{% include 'mandalore/includes/nav.html' %}
+<h1 class="page-title">{{ title }}</h1>
 
-<h1>{{ title }}</h1>
-
-<ul>
+<div class="posts">
     {% for p in page_obj %}
-        <li>
-            <h2>{{ p.title }}</h2>
-            <p>Автор: {% if p.author %}{{ p.author.username }}{% else %}—{% endif %}</p>
-
-            <div class="article-panel">
-                <p class="first">Категория: {{ p.cat }}</p>
-                <p class="last">Дата: {{ p.time_update|date:"d-m-Y H:i:s" }}</p>
-            </div>
-
+        <article class="card">
             {% if p.photo %}
-                <p><img src="{{ p.photo.url }}" alt="{{ p.title }}" style="max-width: 300px;"></p>
+                <img class="card-img" src="{{ p.photo.url }}" alt="{{ p.title }}">
             {% endif %}
 
-            <p>{{ p.content }}</p>
-{% if perms.mandalore.view_starship %}
-    <p><a href="{{ p.get_absolute_url }}">Читать пост</a></p>
-{% endif %}
-            {% if not forloop.last %}
-                <hr>
-            {% endif %}
-        </li>
+            <div class="card-body">
+                <h2>{{ p.title }}</h2>
+
+                <div class="meta">
+                    <span>Категория: {{ p.cat }}</span>
+                    <span>Дата: {{ p.time_update|date:"d-m-Y H:i:s" }}</span>
+                    {% if p.author %}<span>Автор: {{ p.author.username }}</span>{% endif %}
+                </div>
+
+                {% if p.content %}
+                    <p class="card-text">{{ p.content|truncatewords:45 }}</p>
+                {% endif %}
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <a class="btn btn-primary" href="{{ p.get_absolute_url }}">Читать пост</a>
+
+                    {% if perms.mandalore.change_starship %}
+                        <a class="btn" href="{% url 'edit_post' p.slug %}">Редактировать</a>
+                    {% endif %}
+                    {% if perms.mandalore.delete_starship %}
+                        <a class="btn btn-danger" href="{% url 'delete_post' p.slug %}">Удалить</a>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+    {% empty %}
+        <p>Постов пока нет.</p>
     {% endfor %}
-</ul>
+</div>
 
 {% if is_paginated %}
 <nav class="list-pages">
     <ul>
         {% if page_obj.has_previous %}
-            <li class="page-num">
-                <a href="?page={{ page_obj.previous_page_number }}">&lt;</a>
-            </li>
+            <li class="page-num"><a href="?page={{ page_obj.previous_page_number }}">&lt;</a></li>
         {% endif %}
 
         {% for p in paginator.page_range %}
@@ -49,13 +56,9 @@
         {% endfor %}
 
         {% if page_obj.has_next %}
-            <li class="page-num">
-                <a href="?page={{ page_obj.next_page_number }}">&gt;</a>
-            </li>
+            <li class="page-num"><a href="?page={{ page_obj.next_page_number }}">&gt;</a></li>
         {% endif %}
     </ul>
 </nav>
 {% endif %}
-
-{% include 'mandalore/includes/nav.html' %}
 {% endblock %}

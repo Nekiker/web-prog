@@ -19,4 +19,6 @@ urlpatterns = [
     path('category/<int:cat_id>/', views.ShowCategory.as_view(), name='category'),
     path('post/<slug:post_slug>/edit/', views.UpdatePage.as_view(), name='edit_post'),
     path('post/<slug:post_slug>/delete/', views.DeletePost.as_view(), name='delete_post'),
+path('post/<slug:post_slug>/comment/', views.add_comment, name='add_comment'),
+path('post/<slug:post_slug>/vote/', views.vote_post, name='vote_post'),
 ]

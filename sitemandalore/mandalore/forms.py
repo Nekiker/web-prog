@@ -4,6 +4,16 @@ from django.core.validators import MinLengthValidator, MaxLengthValidator, Regex
 from .validators import forbidden_words
 from .models import Starship, Category, ShipPassport
 from django.core.exceptions import ValidationError
+from django import forms
+from .models import Comment
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ('text',)
+        widgets = {
+            'text': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Напишите комментарий...'})
+        }
 
 class UploadFileForm(forms.Form):
     file = forms.FileField(label="Файл")

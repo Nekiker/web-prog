@@ -1,36 +1,83 @@
-{% load static %}
-{% load mandalore_tags %}
-<!DOCTYPE html>
-<html>
+{% load static mandalore_tags %}
+
+<!doctype html>
+<html lang="ru">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title|default:"Mandalore" }}</title>
     <link rel="stylesheet" href="{% static 'mandalore/css/styles.css' %}">
-    <title>{{title}}</title>
 </head>
 <body>
 
-<ul>
-    {% for m in menu %}
-        {% if m.url_name == 'addpage' %}
-            {% if request.user.is_authenticated and perms.mandalore.add_starship %}
-                <li><a href="{% url m.url_name %}">{{ m.title }}</a></li>
-            {% endif %}
-        {% else %}
-            <li><a href="{% url m.url_name %}">{{ m.title }}</a></li>
-        {% endif %}
-    {% endfor %}
-</ul>
-<img src="{% static 'mandalore/images/logo.png' %}" alt="logo" width="120">
-<ul id="leftchapters">
-    {% if cat_selected == 0 or cat_selected is None %}
-        <li class="selected">Все категории</li>
-    {% else %}
-        <li><a href="{% url 'home' %}">Все категории</a></li>
-    {% endif %}
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="{% url 'home' %}">
+            <img src="{% static 'mandalore/images/logo.png' %}" alt="logo">
+            <div class="brand-title">
+                <b>Mandalore</b>
+                <span>проект Django</span>
+            </div>
+        </a>
 
-    {% show_categories cat_selected_id=cat_selected %}
-</ul>
-{% block content %}
-{% endblock %}
+        <nav class="tabs">
+            {# меню из views.py #}
+            {% for m in menu %}
+                {% if m.url_name == 'addpage' %}
+                    {% if request.user.is_authenticated and perms.mandalore.add_starship %}
+                        <a class="tab {% if request.resolver_match.url_name == m.url_name %}active{% endif %}"
+                           href="{% url m.url_name %}">
+                            {{ m.title }}
+                        </a>
+                    {% endif %}
+                {% elif m.url_name == 'login' %}
+                    {# этот пункт лучше не выводить из menu, мы сделаем ниже нормальный блок login/logout #}
+                {% else %}
+                    <a class="tab {% if request.resolver_match.url_name == m.url_name %}active{% endif %}"
+                       href="{% url m.url_name %}">
+                        {{ m.title }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if request.user.is_authenticated %}
+                <span class="user-chip">{{ request.user.username }}</span>
+
+                {% if request.user.pk %}
+                    <a class="tab {% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
+                       href="{% url 'users:profile' request.user.pk %}">
+                        Профиль
+                    </a>
+                {% endif %}
+
+                <a class="tab" href="{% url 'users:logout' %}">Выйти</a>
+            {% else %}
+                <a class="tab {% if request.resolver_match.url_name == 'login' %}active{% endif %}"
+                   href="{% url 'users:login' %}">Войти</a>
+                <a class="tab {% if request.resolver_match.url_name == 'register' %}active{% endif %}"
+                   href="{% url 'users:register' %}">Регистрация</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
+
+<div class="container">
+    <aside class="sidebar">
+        <div class="side-title">Категории</div>
+        <ul class="side-list">
+            {% show_categories cat_selected %}
+        </ul>
+
+        <div class="side-title" style="margin-top:14px;">Теги</div>
+        <div class="tags">
+            {% show_all_tags %}
+        </div>
+    </aside>
+
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+</div>
 
 </body>
 </html>

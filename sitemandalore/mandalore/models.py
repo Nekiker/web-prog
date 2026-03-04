@@ -1,6 +1,37 @@
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.conf import settings
+
+class Vote(models.Model):
+    LIKE = 1
+    DISLIKE = -1
+    VALUE_CHOICES = (
+        (LIKE, 'Like'),
+        (DISLIKE, 'Dislike'),
+    )
+
+    post = models.ForeignKey('Starship', on_delete=models.CASCADE, related_name='votes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='votes')
+    value = models.SmallIntegerField(choices=VALUE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'user')
+
+class Comment(models.Model):
+    post = models.ForeignKey('Starship', on_delete=models.CASCADE, related_name='comments', verbose_name='Пост')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments', verbose_name='Автор')
+    text = models.TextField('Текст комментария', max_length=2000)
+    created_at = models.DateTimeField('Дата', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return f'{self.author} -> {self.post}: {self.text[:30]}'
 
 class PublishStatus(models.IntegerChoices):
     DRAFT = 0, 'Черновик'

@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404, render
-from .models import Starship
+from .models import Starship, Vote
 from .forms import AddPostForm
 from .forms import UploadFileForm
 from .models import Starship, PublishStatus
@@ -24,6 +24,17 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.decorators import permission_required
+from django.shortcuts import redirect
+from django.views.generic import DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from .models import Comment
+from .models import Starship
+from .forms import CommentForm
+from django.db.models import Sum
+from django.http import JsonResponse
+
 
 
 menu = [
@@ -99,6 +110,18 @@ def handle_uploaded_file(f):
     with open(f"uploads/{name}_{suffix}{ext}", "wb+") as destination:
         for chunk in f.chunks():
             destination.write(chunk)
+
+@login_required
+@require_POST
+def add_comment(request, post_slug):
+    post = Starship.objects.get(slug=post_slug)
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        c = form.save(commit=False)
+        c.post = post
+        c.author = request.user
+        c.save()
+    return redirect(post.get_absolute_url())
 
 @login_required
 def about(request):
@@ -218,23 +241,30 @@ class ShowPost(DataMixin, DetailView):
     slug_url_kwarg = 'post_slug'
     context_object_name = 'post'
 
-    def get_queryset(self):
-        return Starship.objects.all().select_related('cat')
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        p = context['post']
-        c_def = self.get_user_context(title=p.title, cat_selected=p.cat_id)
-        return {**context, **c_def}
+        post = context['post']
 
+        c_def = self.get_user_context(title=post.title, cat_selected=post.cat_id)
+        context.update(c_def)
 
+        context['comment_form'] = CommentForm()
+        context['comments'] = post.comments.select_related('author')
+        context['likes_count'] = post.votes.filter(value=1).count()
+        context['dislikes_count'] = post.votes.filter(value=-1).count()
+
+        return context
 
 class UpdatePage(PermissionRequiredMixin, DataMixin, UpdateView):
     model = Starship
     form_class = AddPostForm
     template_name = 'mandalore/addpage.html'
-    success_url = reverse_lazy('home')
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
     permission_required = 'mandalore.change_starship'
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
 
     def get_success_url(self):
         return self.object.get_absolute_url()
@@ -266,3 +296,25 @@ class StarshipHomePaginator(DataMixin, View):
         context = self.get_user_context(title='Главная страница', cat_selected=0)
         context['page_obj'] = page_obj
         return render(request, 'mandalore/index.html', context)
+
+@login_required
+@require_POST
+def vote_post(request, post_slug):
+    post = Starship.objects.get(slug=post_slug)
+    action = request.POST.get('action')
+
+    value = 1 if action == 'like' else -1
+
+    obj, created = Vote.objects.get_or_create(post=post, user=request.user, defaults={'value': value})
+    if not created:
+        if obj.value == value:
+            obj.delete()
+        else:
+            obj.value = value
+            obj.save()
+
+    total = post.votes.aggregate(s=Sum('value'))['s'] or 0
+    likes = post.votes.filter(value=1).count()
+    dislikes = post.votes.filter(value=-1).count()
+
+    return JsonResponse({'likes': likes, 'dislikes': dislikes, 'total': total})

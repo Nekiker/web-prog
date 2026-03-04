@@ -3,7 +3,7 @@
 {% block content %}
 <h1>{{ post.title }}</h1>
 
-    <p>Автор: {% if p.author %}{{ p.author.username }}{% else %}—{% endif %}</p>
+    <p>Автор: {% if post.author %}{{ post.author.username }}{% else %}—{% endif %}</p>
 
 {% if post.photo %}
     <p><img src="{{ post.photo.url }}" alt="{{ post.title }}" style="max-width: 500px;"></p>
@@ -20,4 +20,59 @@
 </p>
 
 <p>{{ post.content }}</p>
+    <hr>
+
+<h3>Комментарии</h3>
+
+{% if request.user.is_authenticated %}
+<form method="post" action="{% url 'add_comment' post.slug %}">
+    {% csrf_token %}
+    {{ comment_form.as_p }}
+    <button class="btn btn-primary" type="submit">Отправить</button>
+</form>
+{% else %}
+<p>Чтобы оставить комментарий, нужно <a href="{% url 'users:login' %}?next={{ request.path }}">войти</a>.</p>
+{% endif %}
+
+<ul>
+    {% for c in comments %}
+        <li style="margin-top: 10px;">
+            <b>{{ c.author.username }}</b> ({{ c.created_at|date:"d-m-Y H:i" }}):<br>
+            {{ c.text|linebreaksbr }}
+        </li>
+    {% empty %}
+        <li>Комментариев пока нет.</li>
+    {% endfor %}
+</ul>
+<div style="display:flex; gap:10px; align-items:center; margin: 10px 0;">
+    <button class="btn" id="likeBtn">👍 <span id="likesCount">{{ likes_count }}</span></button>
+    <button class="btn" id="dislikeBtn">👎 <span id="dislikesCount">{{ dislikes_count }}</span></button>
+</div>
+
+    <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+<script>
+async function sendVote(action){
+  const resp = await fetch("{% url 'vote_post' post.slug %}", {
+      "X-CSRFToken": document.getElementById("csrfToken").value,
+    method: "POST",
+    headers: {
+      "X-CSRFToken": "{{ csrf_token }}",
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: "action=" + action
+  });
+
+  if(resp.status === 403){
+    alert("Нужно войти, чтобы ставить лайк/дизлайк");
+    return;
+  }
+
+  const data = await resp.json();
+  document.getElementById("likesCount").textContent = data.likes;
+  document.getElementById("dislikesCount").textContent = data.dislikes;
+}
+
+document.getElementById("likeBtn").addEventListener("click", () => sendVote("like"));
+document.getElementById("dislikeBtn").addEventListener("click", () => sendVote("dislike"));
+</script>
 {% endblock %}
