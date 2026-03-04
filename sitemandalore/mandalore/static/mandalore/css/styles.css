@@ -187,10 +187,16 @@ a:hover{text-decoration:underline}
   background: rgba(16,31,58,.45);
   overflow:hidden;
 }
-.card-body{padding:14px 14px 16px}
+.card-body{padding:14px 14px 16px; min-width:0}
 .card h2{
   margin:0 0 6px;
   font-size:22px;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
 }
 .meta{
   color:var(--muted);
@@ -202,13 +208,22 @@ a:hover{text-decoration:underline}
 }
 .card-img{
   width:100%;
+  height:clamp(180px, 22vw, 280px);
   display:block;
-  max-height:320px;
   object-fit:cover;
   border-bottom:1px solid var(--line);
 }
-.card-text{margin:0 0 12px; color:var(--text); opacity:.95}
-
+.card-text{
+  margin:0 0 12px;
+  color:var(--text);
+  opacity:.95;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  overflow:hidden;
+}
 /* buttons */
 .btn{
   display:inline-flex;
@@ -279,4 +294,8 @@ a:hover{text-decoration:underline}
 .page-num-selected{
   border-color: rgba(106,169,255,.55);
   box-shadow: 0 0 0 3px rgba(106,169,255,.12);
+}
+.post-text{
+  overflow-wrap:anywhere;
+  word-break:break-word;
 }
